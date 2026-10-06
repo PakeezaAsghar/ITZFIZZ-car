@@ -1,0 +1,8 @@
+{
+  "name": "ITZFIZZ ",
+  "description": "A luxury scroll-driven automotive motion experience engineered with GSAP and ScrollTrigger, featuring responsive kinetics and precision typography.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
