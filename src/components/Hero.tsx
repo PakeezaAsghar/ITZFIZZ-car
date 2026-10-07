@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import realCarImage from '../assets/images/hero_hypercar_visual_1791310349344.jpg';
-import { soundEngine } from '../utils/audio';
-import { ChevronDown, Play, Pause, RotateCcw, TrendingUp, PhoneCall, PackageCheck } from 'lucide-react';
+import { ChevronDown, TrendingUp, PhoneCall, PackageCheck } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,6 +16,7 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
   const roadTrackRef = useRef<HTMLDivElement | null>(null);
   const trailFillRef = useRef<HTMLDivElement | null>(null);
   const carWrapperRef = useRef<HTMLDivElement | null>(null);
+  const headlineRef = useRef<HTMLHeadingElement | null>(null);
 
   // Floating Stat Card references (matching the video positions, styled to site palette)
   const card1Ref = useRef<HTMLDivElement | null>(null); // 58%
@@ -25,10 +25,6 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
   const card4Ref = useRef<HTMLDivElement | null>(null); // 40%
 
   const bottomStatsRef = useRef<HTMLDivElement | null>(null);
-
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isPlayingDemo, setIsPlayingDemo] = useState(false);
-  const tweenRef = useRef<gsap.core.Tween | null>(null);
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -59,13 +55,12 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
           0.3
         );
 
-        // Initial amber kinetic trail
-        loadTl.fromTo(
-          trailFillRef.current,
-          { width: '0%' },
-          { width: '12%', duration: 1.2, ease: 'power2.out' },
-          0.3
-        );
+        // Initial road is blank before the car drives: 0% trail, all letters hidden
+        gsap.set(trailFillRef.current, { width: '0%' });
+        const allChars = headlineRef.current?.querySelectorAll('[data-track-char]');
+        if (allChars && allChars.length > 0) {
+          gsap.set(allChars, { opacity: 0, scale: 0.65, y: 12 });
+        }
 
         // Set initial state of cards: scaled down & hidden
         gsap.set([card1Ref.current, card2Ref.current, card3Ref.current, card4Ref.current], {
@@ -74,6 +69,10 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
           transformOrigin: 'center center',
         });
       } else {
+        const allChars = headlineRef.current?.querySelectorAll('[data-track-char]');
+        if (allChars && allChars.length > 0) {
+          gsap.set(allChars, { opacity: 1, scale: 1, y: 0 });
+        }
         gsap.set([card1Ref.current, card2Ref.current, card3Ref.current, card4Ref.current], {
           opacity: 1,
           scale: 1,
@@ -95,23 +94,24 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
             pin: true,
             scrub: 1.0,
             anticipatePin: 1,
+            invalidateOnRefresh: true,
             onUpdate: (self) => {
-              const prog = self.progress;
-              setScrollProgress(prog);
-              onScrollProgress?.(prog);
-
-              if (self.getVelocity && Math.abs(self.getVelocity()) > 60) {
-                soundEngine.triggerScrollPulse(self.getVelocity() / 1200);
-              }
+              onScrollProgress?.(self.progress);
             },
           },
         });
 
-        // 1. REAL CAR HORIZONTAL DRIVE: Translates across the road from left to right
+        // 1. REAL CAR HORIZONTAL DRIVE:
+        // Translates across the road from left to right, leaving a little bit of the car
+        // (approx 22% of the rear tail) visible at the right edge, without obstructing WELCOME ITZFIZZ
         scrollTl.to(
           carWrapperRef.current,
           {
-            xPercent: 360,
+            x: () => {
+              const trackWidth = roadTrackRef.current ? roadTrackRef.current.clientWidth : (window.innerWidth - 32);
+              const carWidth = carWrapperRef.current ? carWrapperRef.current.clientWidth : 260;
+              return Math.max(0, trackWidth - (carWidth * 0.22));
+            },
             ease: 'none',
           },
           0
@@ -127,7 +127,26 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
           0
         );
 
-        // 3. STAT CARD 1: 58% (Top Left)
+        // 3. LETTER-BY-LETTER REVEAL:
+        // As the car drives across the road, letters pop up one by one in sync with the car passing
+        const allChars = headlineRef.current?.querySelectorAll('[data-track-char]');
+        if (allChars && allChars.length > 0) {
+          scrollTl.fromTo(
+            allChars,
+            { opacity: 0, scale: 0.65, y: 12 },
+            {
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              duration: 0.08,
+              stagger: 0.044, // Sequential letter-by-letter reveal
+              ease: 'back.out(1.6)',
+            },
+            0.08
+          );
+        }
+
+        // 5. STAT CARD 1: 58% (Top Left)
         scrollTl.fromTo(
           card1Ref.current,
           { opacity: 0, scale: 0.65, y: -20 },
@@ -138,10 +157,10 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
             duration: 0.22,
             ease: 'back.out(1.8)',
           },
-          0.14
+          0.16
         );
 
-        // 4. STAT CARD 2: 23% (Bottom Left)
+        // 6. STAT CARD 2: 23% (Bottom Left)
         scrollTl.fromTo(
           card2Ref.current,
           { opacity: 0, scale: 0.65, y: 20 },
@@ -152,7 +171,7 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
             duration: 0.22,
             ease: 'back.out(1.8)',
           },
-          0.24
+          0.26
         );
 
         // 5. STAT CARD 3: 27% (Top Right)
@@ -202,39 +221,6 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
       ctx.revert();
     };
   }, [onScrollProgress]);
-
-  // Demo auto-play simulation
-  const togglePlayDemo = () => {
-    if (isPlayingDemo) {
-      tweenRef.current?.pause();
-      setIsPlayingDemo(false);
-    } else {
-      setIsPlayingDemo(true);
-      const startProg = scrollProgress >= 0.95 ? 0 : scrollProgress;
-      const targetDuration = (1 - startProg) * 4.5;
-
-      const obj = { val: startProg };
-      tweenRef.current = gsap.to(obj, {
-        val: 1,
-        duration: targetDuration,
-        ease: 'power1.inOut',
-        onUpdate: () => {
-          window.scrollTo({
-            top: (heroSectionRef.current?.offsetTop || 0) + obj.val * (window.innerHeight * 2),
-            behavior: 'auto',
-          });
-        },
-        onComplete: () => {
-          setIsPlayingDemo(false);
-        },
-      });
-    }
-  };
-
-  const handleSeek = (progressValue: number) => {
-    const targetScroll = (heroSectionRef.current?.offsetTop || 0) + progressValue * (window.innerHeight * 2);
-    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-  };
 
   return (
     <section
@@ -322,10 +308,36 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
           </div>
 
           {/* WHOLE HEADLINE: "WELCOME ITZFIZZ"
-              Using clamp() so it adapts cleanly to phone, tablet, and laptop without overflow */}
-          <div className="absolute inset-0 flex items-center justify-center z-15 pointer-events-none px-3 sm:px-6 md:px-8 w-full">
-            <h1 className="font-display font-black text-[clamp(1.15rem,4.2vw,4.5rem)] tracking-wider sm:tracking-widest uppercase text-neutral-100 select-none whitespace-nowrap text-center max-w-full drop-shadow-md">
-              WELCOME ITZFIZZ
+              Initially blank on page load. Revealed letter-by-letter as the car drives past */}
+          <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none px-4 pr-14 sm:pr-20 md:pr-28 lg:pr-32 w-full">
+            <h1
+              ref={headlineRef}
+              className="font-display font-black text-[clamp(1.1rem,3.4vw,3.75rem)] tracking-wider sm:tracking-widest uppercase select-none whitespace-nowrap text-center max-w-full drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+            >
+              <span className="inline-block mr-3 sm:mr-5">
+                {'WELCOME'.split('').map((char, index) => (
+                  <span
+                    key={`w-${index}`}
+                    data-track-char
+                    className="inline-block will-change-transform text-neutral-100"
+                    style={{ opacity: 0 }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </span>
+              <span className="inline-block text-amber-400">
+                {'ITZFIZZ'.split('').map((char, index) => (
+                  <span
+                    key={`i-${index}`}
+                    data-track-char
+                    className="inline-block will-change-transform text-amber-400"
+                    style={{ opacity: 0 }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </span>
             </h1>
           </div>
 
@@ -334,7 +346,7 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
              ------------------------------------------------------------- */}
           <div
             ref={carWrapperRef}
-            className="absolute left-2 sm:left-4 z-20 flex items-center justify-center pointer-events-none w-48 sm:w-64 md:w-80 lg:w-96 select-none"
+            className="absolute left-2 sm:left-4 z-20 flex items-center justify-center pointer-events-none w-44 sm:w-56 md:w-68 lg:w-80 select-none"
             style={{ willChange: 'transform' }}
           >
             <div className="relative w-full">
@@ -403,80 +415,20 @@ export const Hero: React.FC<HeroProps> = ({ onScrollProgress }) => {
       </div>
 
       {/* =========================================================================
-          BOTTOM SECTION: Controls & Scroll Readout
+          BOTTOM SECTION: Just Scroll Down
          ========================================================================= */}
-      <div ref={bottomStatsRef} className="relative z-20 w-full max-w-5xl mx-auto pb-3">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3.5 rounded-2xl bg-neutral-900/80 border border-neutral-800/90 backdrop-blur-md">
-          {/* Left: Play / Auto-Demo */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={togglePlayDemo}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-sm shadow-amber-400/20"
-            >
-              {isPlayingDemo ? (
-                <>
-                  <Pause className="w-3.5 h-3.5" />
-                  <span>Pause Demo</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Auto Drive</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSeek(0)}
-              title="Reset to 0%"
-              className="p-1.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Center: Live Scroll Progress readout & Quick Step Markers */}
-          <div className="flex items-center gap-2 text-xs font-mono-num text-neutral-400">
-            <span>DRIVE POSITION:</span>
-            <span className="text-amber-400 font-bold">{Math.round(scrollProgress * 100)}%</span>
-            <div className="hidden md:flex items-center gap-1.5 ml-2">
-              <button
-                type="button"
-                onClick={() => handleSeek(0.20)}
-                className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-300 transition-colors cursor-pointer"
-              >
-                Stat 1 (58%)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSeek(0.32)}
-                className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-300 transition-colors cursor-pointer"
-              >
-                Stat 2 (23%)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSeek(0.60)}
-                className="px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-300 transition-colors cursor-pointer"
-              >
-                Stat 3 & 4
-              </button>
-            </div>
-          </div>
-
-          {/* Right: Scroll down indicator */}
-          <div
-            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer"
-            onClick={() => {
-              const aboutEl = document.getElementById('about');
-              aboutEl?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            <span className="text-[11px] font-mono-num uppercase tracking-wider">Scroll down to explore</span>
-            <ChevronDown className="w-4 h-4 animate-bounce text-amber-400" />
-          </div>
+      <div ref={bottomStatsRef} className="relative z-20 w-full max-w-xs mx-auto pb-4 flex justify-center">
+        <div
+          className="flex items-center gap-2 text-xs text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer group select-none py-2 px-4 rounded-full bg-neutral-900/60 border border-neutral-800/80 backdrop-blur-sm"
+          onClick={() => {
+            const aboutEl = document.getElementById('about');
+            aboutEl?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          <span className="text-xs font-mono-num uppercase tracking-widest text-neutral-400 group-hover:text-amber-400 transition-colors">
+            Scroll down
+          </span>
+          <ChevronDown className="w-4 h-4 animate-bounce text-amber-400" />
         </div>
       </div>
     </section>

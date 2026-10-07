@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowUp } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 export const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -26,14 +27,15 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto flex flex-col gap-8">
         {/* Main responsive row */}
         <div className="flex flex-col lg:flex-row items-center lg:items-center justify-between gap-6 sm:gap-8">
-          {/* Brand Wordmark & Description */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-baseline gap-2 sm:gap-4 text-center sm:text-left">
+          {/* Brand Logo & Description */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4 text-center sm:text-left">
             <a
               href="#hero"
               onClick={(e) => handleNavClick(e, '#hero')}
-              className="font-display font-extrabold text-xl sm:text-2xl tracking-widest text-white hover:text-amber-400 transition-colors uppercase"
+              className="flex items-center transition-transform hover:scale-105"
+              aria-label="iTZFiZZ Home"
             >
-              ITZFIZZ
+              <BrandLogo variant="light" height={28} />
             </a>
             <span className="hidden sm:inline text-neutral-700">·</span>
             <span className="text-xs text-neutral-400 font-sans-body">

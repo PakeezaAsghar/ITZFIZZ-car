@@ -12,15 +12,10 @@ import { InteractiveShowcase } from './components/InteractiveShowcase';
 import { Footer } from './components/Footer';
 
 export default function App() {
-  const [isAudioActive, setIsAudioActive] = useState(false);
-
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans-body selection:bg-amber-400 selection:text-neutral-950">
       {/* Top 3-Zone Navigation Header */}
-      <Navbar
-        isAudioActive={isAudioActive}
-        onAudioToggle={(active) => setIsAudioActive(active)}
-      />
+      <Navbar />
 
       {/* Main Content Area */}
       <main className="flex-1 w-full">

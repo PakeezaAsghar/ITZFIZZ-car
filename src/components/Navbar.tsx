@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Menu, X, ArrowUpRight } from 'lucide-react';
-import { soundEngine } from '../utils/audio';
+import { Menu, X, ArrowUpRight } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
-interface NavbarProps {
-  onAudioToggle?: (enabled: boolean) => void;
-  isAudioActive?: boolean;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ onAudioToggle, isAudioActive = false }) => {
+export const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(isAudioActive);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,12 +13,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onAudioToggle, isAudioActive = f
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleSoundToggle = () => {
-    const active = soundEngine.toggleMute();
-    setAudioEnabled(active);
-    onAudioToggle?.(active);
-  };
 
   const navLinks = [
     { label: 'Kinetic Hero', href: '#hero' },
@@ -51,13 +39,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onAudioToggle, isAudioActive = f
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 flex items-center justify-between">
-        {/* Zone 1: Single text element wordmark in display face */}
+        {/* Zone 1: Official Brand Logo */}
         <a
           href="#hero"
           onClick={(e) => handleNavClick(e, '#hero')}
-          className="font-display text-xl font-bold tracking-widest text-white hover:text-amber-400 transition-colors uppercase select-none"
+          className="flex items-center transition-transform hover:scale-105 select-none"
+          aria-label="iTZFiZZ Home"
         >
-          ITZFIZZ
+          <BrandLogo variant="light" height={30} />
         </a>
 
         {/* Zone 2: 4-6 clean text navigation links */}
@@ -76,26 +65,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onAudioToggle, isAudioActive = f
 
         {/* Zone 3: 1-2 primary functional actions */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleSoundToggle}
-            type="button"
-            title={audioEnabled ? 'Mute kinetic scroll audio' : 'Enable kinetic scroll audio'}
-            aria-label={audioEnabled ? 'Mute kinetic scroll audio' : 'Enable kinetic scroll audio'}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono-num border border-neutral-800 bg-neutral-900/80 text-neutral-300 hover:border-neutral-700 hover:text-white transition-all cursor-pointer whitespace-nowrap"
-          >
-            {audioEnabled ? (
-              <>
-                <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span className="hidden sm:inline text-[11px] text-amber-400">AUDIO ON</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-3.5 h-3.5 text-neutral-500" />
-                <span className="hidden sm:inline text-[11px] text-neutral-400">AUDIO OFF</span>
-              </>
-            )}
-          </button>
-
           <a
             href="#specs"
             onClick={(e) => handleNavClick(e, '#specs')}
